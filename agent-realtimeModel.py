@@ -3,13 +3,9 @@ from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import AgentSession, Agent, RoomInputOptions
 from livekit.plugins import (
-    groq,
-    cartesia,
-    google,
+    openai,
     noise_cancellation,
-    silero,
 )
-from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 load_dotenv()
 
@@ -21,23 +17,17 @@ class Assistant(Agent):
 
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
-        stt=groq.STT(
-      model="whisper-large-v3-turbo",
-      language="en",
-   ),
-        llm=groq.LLM(
-        model="llama3-8b-8192"
-    ),
-        tts=cartesia.TTS(),
-        vad=silero.VAD.load(),
-        turn_detection=MultilingualModel(),
+        llm=openai.realtime.RealtimeModel(
+            model = "gpt-4o-mini-realtime-preview",
+            voice="coral"
+        )
     )
 
     await session.start(
         room=ctx.room,
         agent=Assistant(),
         room_input_options=RoomInputOptions(
-            noise_cancellation=noise_cancellation.BVC(), 
+            noise_cancellation=noise_cancellation.BVC(),
         ),
     )
 
