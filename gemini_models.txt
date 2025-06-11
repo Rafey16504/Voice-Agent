@@ -1,0 +1,5 @@
+MODELS for REALTIME:
+gemini-2.0-flash-exp
+gemini-2.0-flash-live-001 
+gemini-2.5-flash-preview-native-audio-dialog 
+gemini-2.5-flash-exp-native-audio-thinking-dialog

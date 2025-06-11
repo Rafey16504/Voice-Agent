@@ -1,1 +1,4 @@
 .env
+
+./scrape_docs.py
+./gemini_models.txt

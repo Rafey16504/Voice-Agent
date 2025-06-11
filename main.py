@@ -15,6 +15,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from dotenv import load_dotenv
 import annoy
+import time
 
 from livekit.agents import (
     JobContext,
@@ -28,6 +29,7 @@ from livekit.agents import (
 )
 from livekit.plugins import google, openai, silero, groq, cartesia, noise_cancellation
 from livekit.plugins.turn_detector.english import EnglishModel
+from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 # Load environment variables
 load_dotenv()
@@ -152,7 +154,8 @@ Avoid using technical jargon, markdown, or special formatting, and always speak 
 
     @function_tool
     async def orion_info_search(self, context: RunContext, query: str):
-        """Search Orion General Store’s knowledge base for helpful information. Avoid repeating results already returned earlier."""
+        """Search Orion General Store’s knowledge base for helpful information. Logs latency of query processing."""
+        start_time = time.time()  # Start timing
         try:
             # Generate embeddings for the query
             query_embedding = await openai.create_embeddings(
@@ -169,11 +172,11 @@ Avoid using technical jargon, markdown, or special formatting, and always speak 
             ]
 
             if len(new_results) == 0:
+                logger.info(f"[Latency: {time.time() - start_time:.2f}s] No new results for query: '{query}'")
                 return "I couldn’t find any new information about that. Try rephrasing your question?"
 
             new_results = new_results[:2]  # Limit to 2 top new results
 
-            # Build context
             context_parts = []
             for result in new_results:
                 self._seen_results.add(result.userdata)
@@ -185,12 +188,11 @@ Avoid using technical jargon, markdown, or special formatting, and always speak 
                         paragraph = paragraph.split("]")[1].strip()
                     context_parts.append(f"Source: {source}\nContent: {paragraph}\n")
 
-            if not context_parts:
-                return "I couldn’t locate any helpful paragraphs in our system."
-
             full_context = "\n\n".join(context_parts)
             escaped_context = full_context.replace("\n", "\\n")
-            logger.info(f"Results for query: {query}, context: {escaped_context}")
+
+            latency = time.time() - start_time
+            logger.info(f"[Latency: {latency:.2f}s] Query: '{query}' | Results: {len(new_results)} | Context: {escaped_context}")
 
             return full_context
 
@@ -217,7 +219,7 @@ async def entrypoint(ctx: JobContext):
         voice="Kore",
         temperature=0.8
     ),
-        turn_detection=EnglishModel(),
+        turn_detection=MultilingualModel(),
         vad=silero.VAD.load(),
     )
 
@@ -225,7 +227,7 @@ async def entrypoint(ctx: JobContext):
         agent=RAGEnrichedAgent(),
         room=ctx.room,
         room_input_options=RoomInputOptions(
-            noise_cancellation=noise_cancellation.BVC(),
+            # noise_cancellation=noise_cancellation.BVC(),
         ),
     )
 
