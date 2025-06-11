@@ -210,10 +210,13 @@ async def entrypoint(ctx: JobContext):
     """Main entrypoint for the agent."""
     await ctx.connect()
 
+    
     session = AgentSession(
-        stt=groq.STT(model="whisper-large-v3-turbo", language="en"),
-        llm=google.LLM(model="gemini-2.0-flash-exp"),
-        tts=cartesia.TTS(),
+        llm = google.beta.realtime.RealtimeModel(
+        model="gemini-2.0-flash-exp",
+        voice="Kore",
+        temperature=0.8
+    ),
         turn_detection=EnglishModel(),
         vad=silero.VAD.load(),
     )

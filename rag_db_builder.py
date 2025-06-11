@@ -99,7 +99,6 @@ class IndexBuilder:
             pickle.dump(self._filedata, f)
 
     def build(self, trees: int = 50, jobs: int = -1) -> AnnoyIndex:
-        # n_jobs=-1 means use all available cores
         self._index.build(n_trees=trees, n_jobs=jobs)
         return AnnoyIndex(self._index, self._filedata)
 
@@ -118,8 +117,8 @@ class SentenceChunker:
         paragraph_tokenizer: Callable[
             [str], list[str]
         ] = tokenize.basic.tokenize_paragraphs,
-        sentence_tokenizer: tokenize.SentenceTokenizer = tokenize.basic.SentenceTokenizer(),  # noqa: B008
-        word_tokenizer: tokenize.WordTokenizer = tokenize.basic.WordTokenizer(  # noqa: B008
+        sentence_tokenizer: tokenize.SentenceTokenizer = tokenize.basic.SentenceTokenizer(),
+        word_tokenizer: tokenize.WordTokenizer = tokenize.basic.WordTokenizer(
             ignore_punctuation=False
         ),
     ) -> None:
@@ -175,28 +174,6 @@ class SentenceChunker:
 
 
 class RAGBuilder:
-    """
-    Builder for creating and managing RAG (Retrieval-Augmented Generation) databases.
-    Handles data preparation, embedding generation, and vector database creation.
-
-    Example usage:
-        builder = RAGBuilder(
-            index_path="data",
-            data_path="my_data.pkl",
-            embeddings_dimension=1536
-        )
-
-        # Build from raw text file
-        await builder.build_from_file("raw_data.txt")
-
-        # Or build from list of texts
-        await builder.build_from_texts([
-            "First paragraph of content",
-            "Second paragraph of content",
-            ...
-        ])
-    """
-
     def __init__(
         self,
         index_path: Union[str, Path],
@@ -205,16 +182,6 @@ class RAGBuilder:
         embeddings_model: str = "text-embedding-3-small",
         metric: str = "angular",
     ):
-        """
-        Initialize the RAG builder.
-
-        Args:
-            index_path: Path where the Annoy index will be saved
-            data_path: Path where the paragraph data will be saved
-            embeddings_dimension: Dimension of embeddings to use
-            embeddings_model: OpenAI model to use for embeddings
-            metric: Distance metric for Annoy index ("angular", "euclidean", or "manhattan")
-        """
         self._index_path = Path(index_path)
         self._data_path = Path(data_path)
         self._embeddings_dimension = embeddings_dimension
@@ -222,42 +189,31 @@ class RAGBuilder:
         self._metric = metric
 
     def _clean_content(self, text: str) -> str:
-        """
-        Clean the content by removing navigation elements and UI components.
-        """
-        # Remove common navigation elements
         lines = text.split('\n')
         cleaned_lines = []
-        
-        # Skip lines that are just navigation or UI elements
+
         skip_patterns = [
             'Docs', 'Search', 'GitHub', 'Slack', 'Sign in',
             'Home', 'AI Agents', 'Telephony', 'Recipes', 'Reference',
             'On this page', 'Get started with LiveKit today',
             'Content from https://docs.livekit.io/'
         ]
-        
+
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-                
-            # Skip if line matches any skip patterns
             if any(pattern in line for pattern in skip_patterns):
                 continue
-                
-            # Skip if line is just a URL or navigation link
             if line.startswith('http') or line.startswith('[') or line.endswith(']'):
                 continue
-                
             cleaned_lines.append(line)
-            
+
         return '\n'.join(cleaned_lines)
 
     async def _create_embeddings(
         self, text: str, http_session: Optional[aiohttp.ClientSession] = None
     ) -> openai.EmbeddingData:
-        """Create embeddings for a single text."""
         results = await openai.create_embeddings(
             input=[text],
             model=self._embeddings_model,
@@ -269,15 +225,6 @@ class RAGBuilder:
     async def build_from_texts(
         self, texts: List[str], show_progress: bool = True
     ) -> None:
-        """
-        Build the RAG database from a list of texts.
-        Each text will be treated as a separate paragraph/document.
-
-        Args:
-            texts: List of text strings to process
-            show_progress: Whether to show a progress bar
-        """
-        # Create parent directories if they don't exist
         self._index_path.parent.mkdir(parents=True, exist_ok=True)
         self._data_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -286,32 +233,26 @@ class RAGBuilder:
                 f=self._embeddings_dimension, metric=self._metric
             )
 
-            # Clean and filter texts
             cleaned_texts = []
             for text in texts:
                 cleaned = self._clean_content(text)
-                if cleaned:  # Only include non-empty cleaned texts
+                if cleaned:
                     cleaned_texts.append(cleaned)
 
-            # Generate UUIDs for each paragraph
             paragraphs_by_uuid = {str(uuid.uuid4()): text for text in cleaned_texts}
 
-            # Create iterator with optional progress bar
             items = paragraphs_by_uuid.items()
             if show_progress:
                 items = tqdm(items, desc="Creating embeddings")
 
-            # Generate embeddings and add to index
             for p_uuid, paragraph in items:
                 resp = await self._create_embeddings(paragraph, http_session)
                 idx_builder.add_item(resp.embedding, p_uuid)
 
-            # Build and save the index
             logger.info(f"Building index at {self._index_path}")
             idx_builder.build()
             idx_builder.save(str(self._index_path))
 
-            # Save paragraph data
             logger.info(f"Saving paragraph data to {self._data_path}")
             with open(self._data_path, "wb") as f:
                 pickle.dump(paragraphs_by_uuid, f)
@@ -319,19 +260,10 @@ class RAGBuilder:
     async def build_from_file(
         self, file_path: Union[str, Path], show_progress: bool = True
     ) -> None:
-        """
-        Build the RAG database from a text file.
-        The file will be split into paragraphs using basic tokenization.
-
-        Args:
-            file_path: Path to the text file to process
-            show_progress: Whether to show a progress bar
-        """
         file_path = Path(file_path)
         if not file_path.exists():
             raise FileNotFoundError(f"Input file not found: {file_path}")
 
-        # Read and tokenize the file
         with open(file_path, "r", encoding="utf-8") as f:
             raw_data = f.read()
 
@@ -346,18 +278,6 @@ class RAGBuilder:
         data_path: Union[str, Path],
         **kwargs,
     ) -> "RAGBuilder":
-        """
-        Convenience method to create and build a RAG database in one step.
-
-        Args:
-            file_path: Path to the input text file
-            index_path: Path where the Annoy index will be saved
-            data_path: Path where the paragraph data will be saved
-            **kwargs: Additional arguments to pass to RAGBuilder constructor
-
-        Returns:
-            The constructed RAGBuilder instance
-        """
-        builder = cls(index_path, data_path, **kwargs)
+        builder = cls(index_path=index_path, data_path=data_path, **kwargs)
         await builder.build_from_file(file_path)
         return builder

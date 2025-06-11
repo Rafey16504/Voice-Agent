@@ -16,10 +16,10 @@ load_dotenv()
 
 async def main() -> None:
     """
-    Build the RAG database from the scraped docs content.
+    Build the RAG database from the .txt file.
 
     Usage:
-        1. Run generate_fictional_store_data.py to scrape the docs content
+        1. Run generate_fictional_store_data.py
         2. Run this script to build the RAG database
         3. The database will be created in the 'data' directory
     """
@@ -27,8 +27,8 @@ async def main() -> None:
     raw_data_path = Path(__file__).parent / "data/raw_data.txt"
     if not raw_data_path.exists():
         logger.error(
-            "raw_data.txt not found. Please run scrape_docs.py first:\n"
-            "$ python scrape_docs.py"
+            "raw_data.txt not found. Please run generate_fictional_store_data.py first:\n"
+            "$ python generate_fictional_store_data.py"
         )
         return
 
