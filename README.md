@@ -15,7 +15,7 @@
 
 2. Build the RAG database:
    ```bash
-   python rag_db_builder.py
+   python rag_builder.py
    ```
 
 3. Download model files:
