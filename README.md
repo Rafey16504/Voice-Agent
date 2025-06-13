@@ -11,14 +11,11 @@
 
 ## Usage
 
-1. Generate data from json file:
-   ```bash
-   python generate_fictional_store_data.py
-   ```
+1. Enter data in json file:
 
 2. Build the RAG database:
    ```bash
-   python build_rag_data.py
+   python rag_db_builder.py
    ```
 
 3. Download model files:

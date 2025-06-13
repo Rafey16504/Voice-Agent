@@ -1,34 +1,42 @@
 [
   {
-    "source": "https://orionstore.io/about",
-    "content": "Welcome to Orion General Store — your one-stop shop for everything from daily essentials to specialized hardware tools. Located in the heart of Redwood Valley, we’ve been serving the community since 1972 with pride, quality, and care. Our mission is to deliver quality goods and personalized service that make everyday living easier and more delightful."
+    "id": "doc_001",
+    "title": "Store Overview",
+    "text": "Welcome to Orion General Store — your one-stop shop for everything from daily essentials to specialized hardware tools. Located in the heart of Redwood Valley, we’ve been proudly serving the community since 1972 with pride, quality, and care. Our mission is to deliver reliable goods and personalized service that make everyday living easier and more delightful. Whether you're picking up groceries, looking for a gift, or need expert advice on DIY tools, Orion has you covered."
   },
   {
-    "source": "https://orionstore.io/departments",
-    "content": "We have a wide variety of departments, each staffed by friendly experts:\n- Grocery: Fresh produce, dairy, packaged goods, and snacks.\n- Hardware: Tools, paint, adhesives, and plumbing supplies.\n- Electronics: Cables, accessories, and basic tech support.\n- Home & Living: Kitchenware, bedding, decor, and cleaning supplies.\n- Outdoor: Camping gear, seeds, soil, grills, and lawn tools."
+    "id": "doc_002",
+    "title": "Departments & Offerings",
+    "text": "Orion General Store features a wide variety of departments, each staffed by friendly experts ready to help:\n- Grocery: Fresh local produce, organic options, dairy, pantry staples, snacks, and beverages.\n- Hardware: Hand and power tools, fasteners, paint, adhesives, plumbing supplies, and safety gear.\n- Electronics: Phone cables, power adapters, batteries, headphones, and free basic tech support.\n- Home & Living: Kitchenware, small appliances, bedding, decor, and eco-friendly cleaning products.\n- Outdoor: Camping gear, lawn tools, soil, seeds, grills, and seasonal gardening supplies.\nWe aim to be a convenient, all-in-one destination for every household need."
   },
   {
-    "source": "https://orionstore.io/customer-service",
-    "content": "Our customer service desk is open from 9am to 8pm daily. We provide:\n- Item returns (with receipt, within 30 days).\n- Price match guarantees on select products.\n- Store credit or full refunds depending on payment method.\n- Lost & Found and general inquiries."
+    "id": "doc_003",
+    "title": "Customer Service Info",
+    "text": "Our customer service desk is open daily from 9am to 8pm. We offer:\n- Item returns with receipt (within 30 days of purchase).\n- Price match guarantees on select in-store and advertised products.\n- Store credit or full refunds depending on original payment method.\n- Lost & Found, product inquiries, and general store assistance.\nNeed help finding an item or have a special request? Stop by the desk or call us anytime during service hours."
   },
   {
-    "source": "https://orionstore.io/staff",
-    "content": "Our Staff/team includes:\n- Jamie Lin: Store Manager – 12+ years of experience in retail ops.\n- Rafael Gomez: Hardware Lead – Specializes in DIY consultations.\n- Priya Shah: Grocery Supervisor – Passionate about sustainable produce.\n- Marcus Hill: Tech Specialist – Offers basic setup help and advice."
+    "id": "doc_004",
+    "title": "Team & Staff Bios",
+    "text": "At Orion, our staff is the heart of the store:\n- Jamie Lin, Store Manager: Over 12 years in retail operations; known for exceptional leadership and a friendly smile.\n- Rafael Gomez, Hardware Lead: DIY enthusiast who gives practical advice for home repairs and tool selections.\n- Priya Shah, Grocery Supervisor: Advocates for locally sourced and sustainable produce.\n- Marcus Hill, Tech Specialist: Offers setup support for small electronics and helps troubleshoot common issues.\nOur team is trained to provide expert help and personalized service."
   },
   {
-    "source": "https://orionstore.io/membership",
-    "content": "Join the Orion Rewards Program:\n- Earn 1 point per $1 spent.\n- Redeem points for discounts or free products.\n- Get exclusive member-only offers and event invites.\n- Membership is free and signup takes less than 2 minutes at checkout or online."
+    "id": "doc_005",
+    "title": "Rewards Program",
+    "text": "Join the Orion Rewards Program and start saving today:\n- Earn 1 point for every $1 spent.\n- Redeem points for discounts, store credits, or free products.\n- Get early access to sales, member-only coupons, and invitations to exclusive in-store events.\n- Free membership — signup takes less than 2 minutes at checkout or on our website.\nStay loyal, save more!"
   },
   {
-    "source": "https://orionstore.io/faq",
-    "content": "Q: Do you offer delivery?\nA: Yes! We deliver within 20 miles for orders over $30.\n\nQ: Do you repair electronics?\nA: No, but we offer diagnostics and can recommend certified partners.\n\nQ: Are pets allowed?\nA: Yes, service animals and leashed pets are welcome."
+    "id": "doc_006",
+    "title": "Common Questions",
+    "text": "Here are some frequently asked questions:\n- Q: Do you offer delivery?\n  A: Yes, we deliver within a 20-mile radius for orders over $30. Same-day delivery is available on select items.\n- Q: Do you repair electronics?\n  A: We do not offer repairs, but we provide diagnostics and can refer you to certified local repair partners.\n- Q: Are pets allowed?\n  A: Yes! Leashed pets and service animals are always welcome in-store.\n- Q: Can I place a pickup order?\n  A: Absolutely — online or phone-in orders can be prepared for curbside pickup within 2 hours."
   },
   {
-    "source": "https://orionstore.io/events",
-    "content": "Upcoming community events at Orion General Store:\n- Free DIY Workshop (First Saturday of every month)\n- Farmers’ Corner (Sundays 9am–1pm, May–October)\n- Holiday Craft Fair (December 10–15)"
+    "id": "doc_007",
+    "title": "Community Events",
+    "text": "We’re proud to host and support community gatherings:\n- DIY Workshop: Free hands-on sessions the first Saturday of every month; learn home repair and creative crafts.\n- Farmers’ Corner: Local growers bring fresh produce every Sunday, 9am–1pm, from May to October.\n- Holiday Craft Fair: December 10–15 — support local artisans and pick up unique handmade gifts.\nAll events are family-friendly and open to the public."
   },
   {
-    "source": "https://orionstore.io/privacy-policy",
-    "content": "We respect your privacy. We do not sell personal data. Information collected for transactions or memberships is stored securely and used only to enhance your experience. You may request data deletion or export by contacting support@orionstore.io."
+    "id": "doc_008",
+    "title": "Privacy & Data Use",
+    "text": "We take your privacy seriously. Your personal data is never sold to third parties. Information collected through purchases or memberships is securely stored and only used to improve your customer experience. You may request data access, export, or deletion by contacting us at support@orionstore.io. We are committed to transparency and your trust."
   }
 ]

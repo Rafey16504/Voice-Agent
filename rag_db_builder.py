@@ -2,16 +2,19 @@ import pickle
 import uuid
 import logging
 from pathlib import Path
+from dotenv import load_dotenv
 from typing import List, Optional, Union, Literal, Callable, Any
 from collections.abc import Iterable
 from dataclasses import dataclass
 import aiohttp
 from tqdm import tqdm
 import annoy
-
+import asyncio
 from livekit.agents import tokenize
 from livekit.plugins import openai
+import json
 
+load_dotenv()
 logger = logging.getLogger("rag-builder")
 
 # RAG Index Types and Classes
@@ -188,6 +191,42 @@ class RAGBuilder:
         self._embeddings_model = embeddings_model
         self._metric = metric
 
+    def _extract_paragraphs_from_json(self, obj: Any, path: str = "") -> List[str]:
+        paragraphs = []
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                new_path = f"{path}.{k}" if path else k
+                paragraphs.extend(self._extract_paragraphs_from_json(v, new_path))
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                new_path = f"{path}[{i}]"
+                paragraphs.extend(self._extract_paragraphs_from_json(item, new_path))
+        elif isinstance(obj, str):
+            if len(obj.strip()) > 0:
+                paragraphs.append(obj.strip())
+        return paragraphs
+
+    async def build_from_json_file(
+        self, file_path: Union[str, Path], show_progress: bool = True
+    ) -> None:
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise FileNotFoundError(f"Input JSON file not found: {file_path}")
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            json_data = json.load(f)
+
+        # Extract paragraphs from JSON
+        raw_paragraphs = self._extract_paragraphs_from_json(json_data)
+
+        # Optional: clean and chunk text
+        chunker = SentenceChunker()
+        all_chunks = []
+        for p in raw_paragraphs:
+            chunks = chunker.chunk(text=self._clean_content(p))
+            all_chunks.extend(chunks)
+
+        await self.build_from_texts(all_chunks, show_progress)
     def _clean_content(self, text: str) -> str:
         lines = text.split('\n')
         cleaned_lines = []
@@ -281,3 +320,41 @@ class RAGBuilder:
         builder = cls(index_path=index_path, data_path=data_path, **kwargs)
         await builder.build_from_file(file_path)
         return builder
+
+
+async def main() -> None:
+    """
+    Build the RAG database from the structured JSON file.
+
+    Usage:
+        1. Run generate_fictional_store_data.py
+        2. Run this script to build the RAG database
+        3. The database will be created in the 'data' directory
+    """
+    json_data_path = Path(__file__).parent / "orion_store.json"
+    if not json_data_path.exists():
+        logger.error(
+            "store_data.json not found. Please run generate_fictional_store_data.py first:\n"
+            "$ python generate_fictional_store_data.py"
+        )
+        return
+
+    output_dir = Path(__file__).parent / "data"
+    output_dir.mkdir(exist_ok=True)
+
+    logger.info("Building RAG database from JSON...")
+    builder = RAGBuilder(
+        index_path=output_dir,
+        data_path=output_dir / "paragraphs.pkl",
+        embeddings_dimension=1536,
+    )
+    await builder.build_from_json_file(
+        file_path=json_data_path,
+        show_progress=True,
+    )
+    logger.info("RAG database successfully built!")
+    logger.info(f"Index saved to: {output_dir}")
+    logger.info(f"Data saved to: {output_dir / 'paragraphs.pkl'}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
