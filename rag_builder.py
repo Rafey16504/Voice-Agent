@@ -1,134 +1,111 @@
-# rag_builder.py
-import asyncio
-import logging
-import json
-import uuid
-import pickle
-from pathlib import Path
-from typing import List, Union, Optional, Any
-from dataclasses import dataclass
+import argparse
+import os
+import shutil
+from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.schema.document import Document
+from get_embedding_function import get_embedding_function
+from langchain_chroma import Chroma
 
-import aiohttp
-from tqdm import tqdm
-from dotenv import load_dotenv
-from livekit.plugins import openai
-from livekit.agents import tokenize
 
-from rag_index import IndexBuilder, SentenceChunker
 
-load_dotenv()
-logger = logging.getLogger("rag-builder")
+CHROMA_PATH = "chroma"
+DATA_PATH = "data"
 
-def bullet_point_chunker(text: str) -> List[str]:
-        # This assumes each bullet starts with a dash, possibly with a space
-        return [line.strip() for line in text.split('\n') if line.strip().startswith("-")]
-        
-class RAGBuilder:
-    def __init__(
-        self,
-        index_path: Union[str, Path],
-        data_path: Union[str, Path],
-        embeddings_dimension: int = 1536,
-        embeddings_model: str = "text-embedding-3-small",
-        metric: str = "angular",
-    ):
-        self._index_path = Path(index_path)
-        self._data_path = Path(data_path)
-        self._embeddings_dimension = embeddings_dimension
-        self._embeddings_model = embeddings_model
-        self._metric = metric
 
-    def _extract_paragraphs_from_json(self, obj: Any, path: str = "") -> List[str]:
-        paragraphs = []
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                paragraphs.extend(self._extract_paragraphs_from_json(v, f"{path}.{k}" if path else k))
-        elif isinstance(obj, list):
-            for i, item in enumerate(obj):
-                paragraphs.extend(self._extract_paragraphs_from_json(item, f"{path}[{i}]"))
-        elif isinstance(obj, str) and obj.strip():
-            paragraphs.append(obj.strip())
-        return paragraphs
+def main():
 
-    def _clean_content(self, text: str) -> str:
-        skip_patterns = [
-            'Docs', 'Search', 'GitHub', 'Slack', 'Sign in', 'Home', 'AI Agents',
-            'Telephony', 'Recipes', 'Reference', 'On this page',
-            'Get started with LiveKit today', 'Content from https://docs.livekit.io/'
-        ]
-        return '\n'.join(
-            line.strip()
-            for line in text.split('\n')
-            if line.strip() and not any(p in line for p in skip_patterns) and not line.startswith('http')
-        )
+    # Check if the database should be cleared (using the --clear flag).
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--reset", action="store_true", help="Reset the database.")
+    args = parser.parse_args()
+    if args.reset:
+        print("✨ Clearing Database")
+        clear_database()
 
-    
+    # Create (or update) the data store.
+    documents = load_documents()
+    chunks = split_documents(documents)
+    add_to_chroma(chunks)
 
-    async def _create_embeddings(self, text: str, http_session: Optional[aiohttp.ClientSession]) -> openai.EmbeddingData:
-        results = await openai.create_embeddings(
-            input=[text],
-            model=self._embeddings_model,
-            dimensions=self._embeddings_dimension,
-            http_session=http_session,
-        )
-        return results[0]
 
-    async def build_from_texts(self, texts: List[str], show_progress: bool = True) -> None:
-        self._index_path.parent.mkdir(parents=True, exist_ok=True)
-        self._data_path.parent.mkdir(parents=True, exist_ok=True)
+def load_documents():
+    document_loader = PyPDFDirectoryLoader(DATA_PATH)
+    return document_loader.load()
 
-        async with aiohttp.ClientSession() as http_session:
-            idx_builder = IndexBuilder(self._embeddings_dimension, self._metric)
-            cleaned = [self._clean_content(t) for t in texts if t.strip()]
-            paragraphs_by_uuid = {str(uuid.uuid4()): t for t in cleaned}
 
-            items = tqdm(paragraphs_by_uuid.items(), desc="Creating embeddings") if show_progress else paragraphs_by_uuid.items()
-            for p_uuid, paragraph in items:
-                embedding = await self._create_embeddings(paragraph, http_session)
-                idx_builder.add_item(embedding.embedding, p_uuid)
-
-            logger.info("Building index...")
-            idx_builder.build()
-            idx_builder.save(str(self._index_path))
-
-            with open(self._data_path, "wb") as f:
-                pickle.dump(paragraphs_by_uuid, f)
-
-    async def build_from_json_file(self, file_path: Union[str, Path], show_progress: bool = True) -> None:
-        with open(file_path, "r", encoding="utf-8") as f:
-            json_data = json.load(f)
-        raw_paragraphs = self._extract_paragraphs_from_json(json_data)
-        chunker = SentenceChunker()
-        all_chunks = []
-        for para in raw_paragraphs:
-            cleaned = self._clean_content(para)
-            if "-" in cleaned:
-                chunks = bullet_point_chunker(cleaned)
-                if chunks:
-                    all_chunks.extend(chunks)
-                else:
-                    all_chunks.append(cleaned)
-            else:
-                all_chunks.extend(chunker.chunk(text=cleaned))
-        await self.build_from_texts(all_chunks, show_progress)
-
-async def main() -> None:
-    json_data_path = Path(__file__).parent / "orion_store.json"
-    if not json_data_path.exists():
-        logger.error("store_data.json not found. Run generate_fictional_store_data.py first.")
-        return
-
-    output_dir = Path(__file__).parent / "data"
-    output_dir.mkdir(exist_ok=True)
-
-    builder = RAGBuilder(
-        index_path=output_dir,
-        data_path=output_dir / "paragraphs.pkl",
-        embeddings_dimension=1536,
+def split_documents(documents: list[Document]):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        chunk_overlap=80,
+        length_function=len,
+        is_separator_regex=False,
     )
-    logger.info("Building RAG database from JSON...")
-    await builder.build_from_json_file(file_path=json_data_path)
-    logger.info("RAG database built and saved.")
+    return text_splitter.split_documents(documents)
+
+
+def add_to_chroma(chunks: list[Document]):
+    # Load the existing database.
+    db = Chroma(
+        persist_directory=CHROMA_PATH, embedding_function=get_embedding_function()
+    )
+
+    # Calculate Page IDs.
+    chunks_with_ids = calculate_chunk_ids(chunks)
+
+    # Add or Update the documents.
+    existing_items = db.get(include=[])  # IDs are always included by default
+    existing_ids = set(existing_items["ids"])
+    print(f"Number of existing documents in DB: {len(existing_ids)}")
+
+    # Only add documents that don't exist in the DB.
+    new_chunks = []
+    for chunk in chunks_with_ids:
+        if chunk.metadata["id"] not in existing_ids:
+            new_chunks.append(chunk)
+
+    if len(new_chunks):
+        print(f"👉 Adding new documents: {len(new_chunks)}")
+        new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
+        db.add_documents(new_chunks, ids=new_chunk_ids)
+        # db.persist()
+    else:
+        print("✅ No new documents to add")
+
+
+def calculate_chunk_ids(chunks):
+
+    # This will create IDs like "data/monopoly.pdf:6:2"
+    # Page Source : Page Number : Chunk Index
+
+    last_page_id = None
+    current_chunk_index = 0
+
+    for chunk in chunks:
+        source = chunk.metadata.get("source")
+        page = chunk.metadata.get("page")
+        current_page_id = f"{source}:{page}"
+
+        # If the page ID is the same as the last one, increment the index.
+        if current_page_id == last_page_id:
+            current_chunk_index += 1
+        else:
+            current_chunk_index = 0
+
+        # Calculate the chunk ID.
+        chunk_id = f"{current_page_id}:{current_chunk_index}"
+        last_page_id = current_page_id
+
+        # Add it to the page meta-data.
+        chunk.metadata["id"] = chunk_id
+
+    return chunks
+
+
+def clear_database():
+    if os.path.exists(CHROMA_PATH):
+        shutil.rmtree(CHROMA_PATH)
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
