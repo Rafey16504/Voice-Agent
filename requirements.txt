@@ -7,3 +7,5 @@ chromadb # Vector storage
 pytest
 boto3
 langchain-openai
+qdrant-client
+langchain-qdrant

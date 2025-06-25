@@ -17,8 +17,9 @@ from livekit.plugins import google, silero, groq, cartesia
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from get_embedding_function import get_embedding_function
-from langchain_chroma import Chroma
-
+from langchain_qdrant import Qdrant
+from qdrant_client import QdrantClient
+import os
 # Load environment variables
 load_dotenv()
 
@@ -28,7 +29,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("rag-agent")
 
-CHROMA_PATH = str(Path(__file__).parent / "chroma")
+QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+COLLECTION_NAME = "orion_store_embeddings"
 
 class RAGEnrichedAgent(Agent):
     """
@@ -48,10 +51,12 @@ ALSO, DO NOT MENTION THAT YOU FOUND DATA FROM ANYWHERE, ANSWER AS IF YOU KNEW IT
 
         try:
             self._embedding_function = get_embedding_function()
-            self._db = Chroma(persist_directory=CHROMA_PATH, embedding_function=self._embedding_function)
-            logger.info("Chroma RAG database loaded successfully.")
+            client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+            self._db = Qdrant(client=client, collection_name=COLLECTION_NAME, embeddings=get_embedding_function())
+            
+            logger.info("Qdrant RAG database loaded successfully.")
         except Exception as e:
-            logger.error(f"Failed to load Chroma RAG database: {e}")
+            logger.error(f"Failed to load Qdrant RAG database: {e}")
 
         self._seen_results = set()  # Track previously seen results
 
