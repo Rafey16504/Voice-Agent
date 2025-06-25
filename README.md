@@ -8,22 +8,8 @@
 - Google API key
 - Cartesia API key
 - LiveKit server
+- Ollama
 
 ## Usage
 
-1. Enter data in json file:
-
-2. Build the RAG database:
-   ```bash
-   python rag_builder.py
-   ```
-
-3. Download model files:
-   ```bash
-   python main.py download-files
-   ```
-
-4. Run the agent:
-   ```bash
-   python main.py console
-   ```
+Chroma stores your knowledge as vectors, Ollama generates embeddings, and the LLM answers using relevant chunks from Chroma.

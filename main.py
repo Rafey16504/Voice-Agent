@@ -39,8 +39,7 @@ class RAGEnrichedAgent(Agent):
         """Initialize the RAG-enabled agent."""
         super().__init__(
             instructions="""
-You are a helpful voice assistant for the Orion General Store. GREET THE USER AT THE START OF THE CONVERSATION.
-You can answer questions about the store’s departments, hours, services, staff/team, membership program, and upcoming events.
+You are a helpful voice assistant for the Orion Store. You can answer questions about the store’s departments, hours, services, staff/team, membership program, and upcoming events.
 Keep your responses friendly, and conversational — like you're chatting with a neighbor. 
 Avoid using technical jargon, markdown, or special formatting, and always speak clearly for text-to-speech output.
 ALSO, DO NOT MENTION THAT YOU FOUND DATA FROM ANYWHERE, ANSWER AS IF YOU KNEW IT ALL ALREADY.
@@ -58,7 +57,7 @@ ALSO, DO NOT MENTION THAT YOU FOUND DATA FROM ANYWHERE, ANSWER AS IF YOU KNEW IT
 
     @function_tool
     async def orion_info_search(self, context: RunContext, query: str):
-        """Search Orion General Store’s knowledge base for helpful information. Logs latency of query processing."""
+        """Search Orion Store’s knowledge base for helpful information. Logs latency of query processing."""
         start_time = time.time()
         try:
             results = self._db.similarity_search_with_score(query, k=5)
@@ -101,6 +100,20 @@ ALSO, DO NOT MENTION THAT YOU FOUND DATA FROM ANYWHERE, ANSWER AS IF YOU KNEW IT
 
     async def on_transcription(self, text: str):
         start_time = time.time()
+
+        cleaned_text = text.strip().lower()
+
+        # Skip empty or very short transcriptions
+        if len(cleaned_text) < 3:
+            logger.info("Skipping short or empty transcription.")
+            return
+
+        # Skip common filler phrases
+        ignored_phrases = {"uh", "um", "hmm", "okay", "ok", "huh", "hmm okay"}
+        if cleaned_text in ignored_phrases:
+            logger.info(f"Skipping filler phrase: '{cleaned_text}'")
+            return
+
         await self.session.generate_reply(prompt=text)
         latency = time.time() - start_time
         logger.info(f"[Full Response Latency: {latency:.2f}s] Prompt: {text}")
