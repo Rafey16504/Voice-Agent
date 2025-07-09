@@ -1,11 +1,12 @@
-livekit-agents[openai,silero,turn-detector,deepgram]~=1.0
+livekit-agents[openai,google,silero,groq,cartesia,turn-detector]~=1.0
 livekit-plugins-noise-cancellation~=0.2
 python-dotenv
 pypdf
 langchain
-chromadb # Vector storage
 pytest
 boto3
 langchain-openai
 qdrant-client
 langchain-qdrant
+langchain-community
+langchain-text-splitters
