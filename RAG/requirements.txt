@@ -8,4 +8,4 @@ langchain-openai
 langchain-qdrant
 qdrant-client
 python-dotenv
-PyMuPDF
+pypdf
