@@ -2,8 +2,10 @@ fastapi
 uvicorn
 requests
 langchain
+openai
 langchain-community
 langchain-openai
 langchain-qdrant
 qdrant-client
 python-dotenv
+PyMuPDF
