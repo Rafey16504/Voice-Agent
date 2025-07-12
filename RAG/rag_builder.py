@@ -5,7 +5,7 @@ import requests
 from dotenv import load_dotenv
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_openai import OpenAIEmbeddings  
 from langchain_qdrant import Qdrant
 from qdrant_client import QdrantClient, models
@@ -38,6 +38,8 @@ def main_from_api(pdf_url: str, user_id: str):
 
 def load_documents_from_url(pdf_url: str):
     response = requests.get(pdf_url)
+    print(f"[DEBUG] Downloaded {len(response.content)} bytes from {pdf_url}")
+
     if response.status_code != 200:
         raise Exception(f"Failed to download PDF from {pdf_url}")
 
@@ -45,8 +47,12 @@ def load_documents_from_url(pdf_url: str):
         tmp.write(response.content)
         tmp_path = tmp.name
 
-    loader = PyPDFLoader(tmp_path)
-    return loader.load()
+    loader = PyMuPDFLoader(tmp_path)
+    docs = loader.load()
+    print(f"[DEBUG] Loaded {len(docs)} pages")
+    if docs:
+        print(f"[DEBUG] Sample text:\n{docs[0].page_content[:500]}")
+    return docs
 
 def split_documents(documents: list[Document]):
     splitter = RecursiveCharacterTextSplitter(
