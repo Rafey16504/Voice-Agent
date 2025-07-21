@@ -17,7 +17,7 @@ from qdrant_client import QdrantClient, models  # Qdrant client for direct opera
 # Load Qdrant configuration from environment variables
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-COLLECTION_NAME = "orion_store_embeddings"  # Name of the collection to store embeddings
+COLLECTION_NAME = "user_99c5107b-6e48-4929-a913-441ff7a29b27_embeddings"  # Name of the collection to store embeddings
 DATA_PATH = "data"  # Path to directory containing PDF files
 
 

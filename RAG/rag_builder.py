@@ -59,9 +59,8 @@ def add_to_qdrant(client: QdrantClient, chunks: list[Document], collection_name:
     ids = [chunk.metadata["id"] for chunk in chunks_with_ids]
     db.add_documents(chunks_with_ids, ids=ids)
 
-def main_from_api(pdf_url: str, user_id: str, reset: bool = True):
+def main_from_api(pdf_urls: list[str], user_id: str, reset: bool = True):
     collection_name = f"user_{user_id}_embeddings"
-
     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
     if reset:
@@ -69,30 +68,30 @@ def main_from_api(pdf_url: str, user_id: str, reset: bool = True):
         try:
             client.delete_collection(collection_name=collection_name)
         except:
-            pass  # Ignore if doesn't exist
+            pass
         client.create_collection(
             collection_name=collection_name,
             vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE)
         )
 
-    documents = load_documents_from_url(pdf_url)
-    if not documents:
-        raise Exception("❌ No text extracted from PDF.")
+    all_chunks = []
 
-    chunks = split_documents(documents)
-    if not chunks:
-        raise Exception("❌ No chunks generated.")
+    for url in pdf_urls:
+        print(f"📥 Processing PDF: {url}")
+        documents = load_documents_from_url(url)
+        if not documents:
+            print(f"⚠️ No text extracted from {url}, skipping.")
+            continue
 
-    add_to_qdrant(client, chunks, collection_name)
+        chunks = split_documents(documents)
+        if not chunks:
+            print(f"⚠️ No chunks from {url}, skipping.")
+            continue
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--pdf_url", type=str, required=True, help="Public URL to PDF")
-    parser.add_argument("--user_id", type=str, required=True, help="User ID to namespace the collection")
-    parser.add_argument("--reset", action="store_true", help="Whether to reset the collection before adding")
+        all_chunks.extend(chunks)
 
-    args = parser.parse_args()
-    main_from_api(args.pdf_url, args.user_id, reset=args.reset)
+    if not all_chunks:
+        raise Exception("❌ No valid documents found from any provided PDFs.")
 
-if __name__ == "__main__":
-    main()
+    add_to_qdrant(client, all_chunks, collection_name)
+

@@ -39,7 +39,7 @@ logger = logging.getLogger("rag-agent")
 # Load Qdrant configuration from environment
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-COLLECTION_NAME = "orion_store_embeddings"  # Name of your Qdrant collection
+COLLECTION_NAME = "user_1585bdff-6424-416b-9a51-12908fb5c799_embeddings"  # Name of your Qdrant collection
 
 # Define the RAG-enabled Agent class
 class RAGEnrichedAgent(Agent):
@@ -52,7 +52,7 @@ class RAGEnrichedAgent(Agent):
         """Initialize the RAG-enabled agent with instructions and RAG setup."""
         super().__init__(
             instructions="""
-You are a helpful voice assistant for the Orion Store. You can answer questions about the store’s departments, hours, services, staff/team, membership program, and upcoming events.
+You are a helpful voice assistant for the user. You can answer questions about the file they have uploaded.
 Keep your responses friendly, and conversational — like you're chatting with a neighbor. 
 Avoid using technical jargon, markdown, or special formatting, and always speak clearly for text-to-speech output.
 ALSO, DO NOT MENTION THAT YOU FOUND DATA FROM ANYWHERE, ANSWER AS IF YOU KNEW IT ALL ALREADY.
